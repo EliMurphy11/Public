@@ -1,0 +1,46 @@
+print("Think of a musical artist. I will try to guess who it is by asking you questions!")
+
+genres = {
+    "pop": ["Taylor Swift", "Ariana Grande", "Ed Sheeran", "Dua Lipa", "Billie Eilish", "Justin Bieber", "Katy Perry", "Lady Gaga", "Bruno Mars", "Shawn Mendes",
+            "Selena Gomez", "The Weeknd", "Sam Smith", "Camila Cabello", "Charlie Puth", "Rihanna", "Harry Styles", "Olivia Rodrigo", "Halsey", "Lizzo",
+            "Miley Cyrus", "Sia", "Troye Sivan", "Meghan Trainor", "BTS", "BLACKPINK", "Doja Cat", "Maroon 5", "Demi Lovato", "Nick Jonas",
+            "Jonas Brothers", "Zayn", "Niall Horan", "Anne-Marie", "Ava Max", "Lewis Capaldi", "Ellie Goulding", "Tove Lo", "Carly Rae Jepsen", "Jessie J",
+            "Jason Derulo", "Shakira", "Pitbull", "Enrique Iglesias", "Kelly Clarkson", "P!nk", "Adele", "Christina Aguilera", "Britney Spears", "Madonna"],
+    "rock": ["Foo Fighters", "Imagine Dragons", "Coldplay", "Red Hot Chili Peppers", "Green Day", "Linkin Park", "Queen", "The Rolling Stones", "U2", "AC/DC",
+             "Led Zeppelin", "The Beatles", "Arctic Monkeys", "Muse", "The Killers", "Paramore", "Fall Out Boy", "Panic! At The Disco", "Nirvana", "Pearl Jam",
+             "Metallica", "Bon Jovi", "Guns N' Roses", "Pink Floyd", "Radiohead", "The Who", "Fleetwood Mac", "Journey", "Eagles", "Aerosmith",
+             "The Doors", "Def Leppard", "The Police", "Genesis", "Rush", "Deep Purple", "The Cure", "Smashing Pumpkins", "Kings of Leon", "Florence + The Machine",
+             "The Strokes", "Blink-182", "Weezer", "The Black Keys", "The White Stripes", "Stone Temple Pilots", "Creed", "Nickelback", "Santana", "Yes"],
+    "hiphop": ["Drake", "Kendrick Lamar", "J. Cole", "Travis Scott", "Post Malone", "Lil Nas X", "Cardi B", "Nicki Minaj", "Megan Thee Stallion", "Doja Cat",
+               "Lil Baby", "DaBaby", "21 Savage", "Future", "Tyler, The Creator", "A$AP Rocky", "Juice WRLD", "Pop Smoke", "Lil Uzi Vert", "Migos",
+               "Kanye West", "Jay-Z", "Eminem", "Nas", "Lil Wayne", "Snoop Dogg", "Ice Cube", "Tupac", "Notorious B.I.G.", "Missy Elliott",
+               "Queen Latifah", "Run DMC", "Outkast", "Childish Gambino", "Logic", "Chance the Rapper", "Big Sean", "Wiz Khalifa", "Mac Miller", "Trippie Redd",
+               "G-Eazy", "YG", "Rick Ross", "Meek Mill", "Pusha T", "A Boogie Wit Da Hoodie", "Lil Durk", "Cordae", "Russ", "Flo Rida"],
+    "country": ["Luke Combs", "Morgan Wallen", "Carrie Underwood", "Blake Shelton", "Kane Brown", "Miranda Lambert", "Chris Stapleton", "Thomas Rhett", "Jason Aldean", "Florida Georgia Line",
+                "Keith Urban", "Tim McGraw", "Dierks Bentley", "Sam Hunt", "Eric Church", "Lady A", "Zac Brown Band", "Kelsea Ballerini", "Maren Morris", "Dan + Shay",
+                "Luke Bryan", "Brett Young", "Old Dominion", "Little Big Town", "Scotty McCreery", "Brothers Osborne", "Jon Pardi", "Cole Swindell", "Brantley Gilbert", "Billy Currington",
+                "Rascal Flatts", "Sugarland", "Jimmie Allen", "Ashley McBryde", "Carly Pearce", "Chris Young", "Lauren Alaina", "Gabby Barrett", "Parker McCollum", "Hailey Whitters",
+                "Ingrid Andress", "Tenille Townes", "Lindsay Ell", "Maddie & Tae", "Tyler Hubbard", "Travis Denning", "Elvie Shane", "Mitchell Tenpenny", "Ryan Hurd", "Russell Dickerson"],
+    "rnb": ["Beyoncé", "Rihanna", "Alicia Keys", "Usher", "Chris Brown", "John Legend", "Bruno Mars", "The Weeknd", "SZA", "H.E.R.",
+            "Khalid", "Miguel", "Frank Ocean", "Janelle Monáe", "Mary J. Blige", "TLC", "Solange", "Ella Mai", "Summer Walker", "Giveon",
+            "Trey Songz", "Ne-Yo", "Toni Braxton", "Ciara", "Ashanti", "Mario", "Tank", "Tyrese", "Jazmine Sullivan", "Kehlani",
+            "Daniel Caesar", "Anderson .Paak", "Maxwell", "D'Angelo", "Erykah Badu", "Lauryn Hill", "Joe", "Ginuwine", "SWV", "En Vogue",
+            "Boyz II Men", "Jagged Edge", "112", "Monica", "Brandy", "Aaliyah", "Destiny's Child", "Whitney Houston", "Janet Jackson", "Mariah Carey"],
+}
+
+print("What genre is your artist from? (pop, rock, hiphop, country, rnb)")
+genre = input("Genre: ").strip().lower()
+
+if genre not in genres:
+    print("Sorry, I only know the top artists from pop, rock, hiphop, country, and rnb.")
+else:
+    artist_list = genres[genre]
+    print(f"I will ask you questions to guess your artist from the top 50 {genre} artists.")
+
+    for i, artist in enumerate(artist_list, 1):
+        answer = input(f"Is your artist {artist}? (yes/no): ").strip().lower()
+        if answer == "yes":
+            print(f"I guessed it! Your artist is {artist}.")
+            break
+        elif i == len(artist_list):
+            print("I couldn't guess your artist. Try again or pick another genre!")
