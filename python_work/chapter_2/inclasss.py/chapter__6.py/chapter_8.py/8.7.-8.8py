@@ -1,0 +1,25 @@
+# write a function called make_album() that builds a dictionary describing a music album
+def make_album(artist, title, tracks=None):
+    album = {'artist': artist.title(), 'title': title.title()}
+    if tracks:
+        album['tracks'] = tracks
+    return album
+# call the function with different artists and titles
+album1 = make_album('d4vd', 'withered')
+album2 = make_album('jvke', 'this is what _____ feels like', 17)
+album3 = make_album('forrest frank', 'child of god', 13)
+# print each return value to show that the dictionary is storing the album information correctly
+print(album1)
+print(album2)
+print(album3)
+# allow user to input artist name and album title to create a custom album
+while True:
+    print("\nEnter 'q' at any time to quit.")
+    artist_name = input("Enter the artist's name: ")
+    if artist_name.lower() == 'q':
+        break
+    album_title = input("Enter the album title: ")
+    if album_title.lower() == 'q':
+        break
+    custom_album = make_album(artist_name, album_title)
+    print(f"Created album: {custom_album}")

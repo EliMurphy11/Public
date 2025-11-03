@@ -1,0 +1,6 @@
+transportaion = ("car", "motorcycle", "bicycle", "bus", "train")
+print("I would like to own a " + transportaion[0] + ".")
+print("I would like to own a " + transportaion[1] + ".")
+print("I would like to own a " + transportaion[2] + ".")
+print("I would like to own a " + transportaion[3] + ".")
+print("I would like to own a " + transportaion[4] + ".")
