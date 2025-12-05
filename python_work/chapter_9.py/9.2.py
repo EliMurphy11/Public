@@ -1,4 +1,4 @@
-# make a class called Restaurant the init method should take two parameters called retaurant_name and cuisine_type
+# start with the class from 9.1.py and then make three instances of the Restaurant class
 class Restaurant:
     """A class representing a restaurant."""
 
@@ -13,8 +13,12 @@ class Restaurant:
 
     def open_restaurant(self):
         """Indicate that the restaurant is open."""
-        print(f"{self.restaurant_name} is now open!") 
-# make a methoid called describe_restaurant that prints the restaurant name and cuisine type
-    def describe_restaurant(self):
-        """Display information about the restaurant."""
-  
+        print(f"{self.restaurant_name} is now open!")
+# Create three instances of the Restaurant class
+restaurant1 = Restaurant("Pasta Palace", "Italian")
+restaurant2 = Restaurant("Sushi Central", "Japanese")
+restaurant3 = Restaurant("Taco Town", "Mexican")
+restaurant1.describe_restaurant()
+restaurant2.describe_restaurant()
+restaurant3.describe_restaurant()
+ 

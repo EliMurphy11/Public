@@ -1,5 +1,5 @@
-# write a class called icecreamstad that inherets from the restaurant class from restaurant import Restaurant
-from Restaurant import Restaurant
+# write a class called IceCreamStand that inherets from the restaurant class from restaurant import Restaurant
+from restaurant import Restaurant
 class IceCreamStand(Restaurant):
     """A class representing an ice cream stand, inheriting from Restaurant."""
 
@@ -17,3 +17,11 @@ class IceCreamStand(Restaurant):
         print("Available ice cream flavors:")
         for flavor in self.flavors:
             print(f"- {flavor}")
+if __name__ == "__main__":
+    # create an IceCreamStand instance and demonstrate its functionality
+    ice_cream_stand = IceCreamStand("Sweet Treats")
+    ice_cream_stand.add_flavor("Vanilla")
+    ice_cream_stand.add_flavor("Chocolate")
+    ice_cream_stand.add_flavor("Strawberry")
+    ice_cream_stand.describe_restaurant()
+    ice_cream_stand.display_flavors()
