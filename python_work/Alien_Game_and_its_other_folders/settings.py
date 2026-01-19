@@ -45,3 +45,7 @@ class Settings:
         self.laser_duration = 8000  # ms laser ability lasts after pickup
         self.laser_beam_duration = 600  # ms a fired beam lasts
         self.laser_cooldown = 500  # ms between laser fires
+
+        # Music
+        self.music_path = 'images/background_music.wav'
+        self.music_volume = 1.0  # 100% volume (0.0 to 1.0) - MAXIMUM

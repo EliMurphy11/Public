@@ -15,7 +15,7 @@ class Ship:
         ship_path = os.path.join(os.path.dirname(__file__), 'images', 'ship.bmp')
         if os.path.isfile(ship_path):
             try:
-                self.image = pygame.image.load(ship_path).convert_alpha()
+                self.image = pygame.image.load(os.path.join(os.path.dirname(__file__), 'images', 'espresso.png')).convert_alpha()
             except Exception:
                 self.image = None
 
