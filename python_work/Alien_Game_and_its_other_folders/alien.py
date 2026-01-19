@@ -114,10 +114,8 @@ class AlienInvasion:
         self.score = 0
         self.level = 1
         self.aliens_killed_this_level = 0
-
-        # Initialize music
-        self._init_music()
-
+        
+        
         self.show_high_scores_screen()
 
     def _create_fleet(self):
