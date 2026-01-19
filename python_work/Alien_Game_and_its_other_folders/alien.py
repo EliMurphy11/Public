@@ -7,11 +7,14 @@ from settings import Settings
 from ship import Ship
 from bullet import Bullet
 from alien_sprite import Alien
-from background import Star, Planet
+
 from effects import ConfettiParticle, Trophy
 from powerup import LaserPickup, LaserBeam
-
-
+from high_scores import HighScores
+from images.background_song import Star, Planet
+from images.background_song import Background
+from pygame.sprite import Sprite, Group
+from pygame import mixer
 class AlienInvasion:
     def __init__(self):
         pygame.init()
@@ -77,11 +80,11 @@ class AlienInvasion:
 
         # create background
         for _ in range(self.settings.bg_star_count):
-            s = Star(self)
+            s = Star(self.screen, self.settings)
             self.stars.add(s)
 
         for _ in range(self.settings.bg_planet_count):
-            p = Planet(self)
+            p = Planet(self.screen, self.settings)
             self.planets.add(p)
 
         # celebration effects
@@ -105,6 +108,17 @@ class AlienInvasion:
         self.end_message_shown_at = None
         # Minimum time (ms) the end screen should be clearly visible
         self.end_message_duration = 5000
+
+        # Score and level system
+        self.high_scores = HighScores()
+        self.score = 0
+        self.level = 1
+        self.aliens_killed_this_level = 0
+
+        # Initialize music
+        self._init_music()
+
+        self.show_high_scores_screen()
 
     def _create_fleet(self):
         # Create a grid (rows x cols) of aliens. This makes more aliens on
@@ -142,6 +156,134 @@ class AlienInvasion:
         if len(self.bullets) < self.settings.bullets_allowed:
             self.bullets.add(Bullet(self))
 
+    def show_high_scores_screen(self):
+        """Display high scores before game starts."""
+        scores = self.high_scores.get_top_scores(10)
+        if not scores:
+            return  # no high scores yet
+        # render high scores text
+        lines = ["HIGH SCORES"]
+        for i, entry in enumerate(scores, 1):
+            lines.append(f"{i}. {entry['initials']:3s} {entry['score']:6d}")
+        # show on screen briefly
+        self._show_message('\n'.join(lines))
+        pygame.time.delay(3000)
+
+    def _get_player_initials(self):
+        """Show a screen prompting player to enter their initials (3 chars max)."""
+        initials = ""
+        input_active = True
+        cursor_visible = True
+        cursor_time = 0
+        while input_active:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        input_active = False
+                    elif event.key == pygame.K_BACKSPACE:
+                        initials = initials[:-1]
+                    elif len(initials) < 3:
+                        # accept letters and numbers
+                        char = event.unicode.upper()
+                        if char.isalnum():
+                            initials += char
+                    cursor_time = 0
+                    cursor_visible = True
+            # update cursor blink
+            cursor_time += 16
+            if cursor_time > 500:
+                cursor_visible = not cursor_visible
+                cursor_time = 0
+            # render prompt
+            self.screen.fill(self.bg_color)
+            prompt_font = pygame.font.Font(self.settings.font_name, 48)
+            title = prompt_font.render("ENTER INITIALS", True, self.settings.text_color)
+            title_rect = title.get_rect(center=(self.settings.screen_width // 2, self.settings.screen_height // 2 - 80))
+            self.screen.blit(title, title_rect)
+            # display input with cursor
+            display_text = initials + ("_" if cursor_visible else " ")
+            input_surf = prompt_font.render(display_text, True, (255, 200, 100))
+            input_rect = input_surf.get_rect(center=(self.settings.screen_width // 2, self.settings.screen_height // 2 + 20))
+            self.screen.blit(input_surf, input_rect)
+            # hint
+            hint_font = pygame.font.Font(self.settings.font_name, 28)
+            hint = hint_font.render("Press ENTER to confirm", True, self.settings.text_color)
+            hint_rect = hint.get_rect(center=(self.settings.screen_width // 2, self.settings.screen_height // 2 + 100))
+            self.screen.blit(hint, hint_rect)
+            pygame.display.flip()
+            self.clock.tick(60)
+        return initials.ljust(3, ' ')[:3]
+
+    def _show_leaderboard_with_player(self, player_initials, player_score):
+        """Display the leaderboard highlighting where the player ranked."""
+        # Find player's rank
+        scores = self.high_scores.get_top_scores(10)
+        player_rank = None
+        for i, entry in enumerate(scores, 1):
+            if entry['initials'] == player_initials and entry['score'] == player_score:
+                player_rank = i
+                break
+
+        # Render leaderboard
+        input_active = True
+        while input_active:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    input_active = False
+
+            self.screen.fill(self.bg_color)
+            title_font = pygame.font.Font(self.settings.font_name, 56)
+            title = title_font.render("HIGH SCORES", True, self.settings.text_color)
+            title_rect = title.get_rect(center=(self.settings.screen_width // 2, 40))
+            self.screen.blit(title, title_rect)
+
+            # leaderboard entries
+            entry_font = pygame.font.Font(self.settings.font_name, 36)
+            y = 120
+            for i, score_entry in enumerate(scores, 1):
+                # highlight player's entry in a different color
+                if i == player_rank:
+                    color = (100, 255, 100)  # green for player
+                else:
+                    color = self.settings.text_color
+                text = f"{i:2d}. {score_entry['initials']:3s}  {score_entry['score']:6d}"
+                surf = entry_font.render(text, True, color)
+                self.screen.blit(surf, (self.settings.screen_width // 2 - 150, y))
+                y += 50
+
+            # hint to continue
+            hint_font = pygame.font.Font(self.settings.font_name, 28)
+            hint = hint_font.render("Press any key to continue", True, self.settings.text_color)
+            hint_rect = hint.get_rect(center=(self.settings.screen_width // 2, self.settings.screen_height - 60))
+            self.screen.blit(hint, hint_rect)
+            pygame.display.flip()
+            self.clock.tick(60)
+
+    def _level_up(self):
+        """Handle level progression: increase difficulty and create new alien fleet."""
+        self.level += 1
+        self.aliens_killed_this_level = 0
+        # increase alien speed for this level
+        level_speed_multiplier = 1.0 + (self.level - 1) * 0.3
+        self.settings.alien_speed = max(20, int(20 * level_speed_multiplier))
+        # create new fleet
+        self.aliens.empty()
+        self._create_fleet()
+        # reset pickup scheduling for next level
+        self.first_life_lost_at = None
+        self.pickup_scheduled_at = None
+        self.pickup_spawned_after_first_life = False
+        # Schedule a new pickup for this level (spawn within 1-3 seconds)
+        now = pygame.time.get_ticks()
+        self.pickup_scheduled_at = now + random.randint(1000, 3000)
+
+
     def _show_message(self, text):
         """Render a centered message on the screen."""
         surf = self.msg_font.render(text, True, self.settings.text_color)
@@ -149,6 +291,101 @@ class AlienInvasion:
         self.screen.fill(self.bg_color)
         self.screen.blit(surf, rect)
         pygame.display.flip()
+
+    def _check_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                # Movement keys (arrow keys and WASD)
+                if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
+                    self.ship.moving_right = True
+                elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
+                    self.ship.moving_left = True
+                elif event.key == pygame.K_UP or event.key == pygame.K_w:
+                    self.ship.moving_up = True
+                elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
+                    self.ship.moving_down = True
+
+                # Also update aim flags when WASD or arrows are used so diagonal aiming works
+                if event.key == pygame.K_w:
+                    self.ship.aim_up = True
+                if event.key == pygame.K_s:
+                    self.ship.aim_down = True
+                if event.key == pygame.K_a:
+                    self.ship.aim_left = True
+                if event.key == pygame.K_d:
+                    self.ship.aim_right = True
+                if event.key == pygame.K_UP:
+                    self.ship.aim_up = True
+                if event.key == pygame.K_DOWN:
+                    self.ship.aim_down = True
+                if event.key == pygame.K_LEFT:
+                    self.ship.aim_left = True
+                if event.key == pygame.K_RIGHT:
+                    self.ship.aim_right = True
+
+                # Fire (space): laser if enabled otherwise a normal bullet
+                if event.key == pygame.K_SPACE:
+                    now = pygame.time.get_ticks()
+                    if self.laser_enabled:
+                        # start a persistent laser beam while space is held
+                        if not self.space_held:
+                            origin = self.ship.rect.center
+                            bx, by = 0.0, -1.0
+                            beam = LaserBeam(self, origin, bx, by, persistent=True)
+                            # store origin reference so beam can follow ship; beam will be killed on KEYUP
+                            beam.origin = self.ship.rect.center
+                            self.beams.add(beam)
+                            self.space_held = True
+                    else:
+                        # normal bullet fired once on keydown
+                        self._fire_bullet()
+
+                # Quit / Restart
+                if event.key == pygame.K_q:
+                    pygame.quit()
+                    sys.exit()
+                if event.key == pygame.K_r and not self.game_active:
+                    self._restart_game()
+
+            elif event.type == pygame.KEYUP:
+                # Movement keys
+                if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
+                    self.ship.moving_right = False
+                if event.key == pygame.K_LEFT or event.key == pygame.K_a:
+                    self.ship.moving_left = False
+                if event.key == pygame.K_UP or event.key == pygame.K_w:
+                    self.ship.moving_up = False
+                if event.key == pygame.K_DOWN or event.key == pygame.K_s:
+                    self.ship.moving_down = False
+
+                # Aim flags
+                if event.key == pygame.K_w:
+                    self.ship.aim_up = False
+                if event.key == pygame.K_s:
+                    self.ship.aim_down = False
+                if event.key == pygame.K_a:
+                    self.ship.aim_left = False
+                if event.key == pygame.K_d:
+                    self.ship.aim_right = False
+                if event.key == pygame.K_UP:
+                    self.ship.aim_up = False
+                if event.key == pygame.K_DOWN:
+                    self.ship.aim_down = False
+                if event.key == pygame.K_LEFT:
+                    self.ship.aim_left = False
+                if event.key == pygame.K_RIGHT:
+                    self.ship.aim_right = False
+
+                # On SPACE release, stop persistent laser beams
+                if event.key == pygame.K_SPACE:
+                    if self.space_held:
+                        self.space_held = False
+                        for beam in list(self.beams):
+                            if getattr(beam, 'persistent', False):
+                                beam.kill()
 
     def _spawn_win_effects(self):
         """Spawn confetti and trophies for the win celebration."""
@@ -300,6 +537,9 @@ class AlienInvasion:
         # Draw HUD: small ship icons for lives
         self._draw_lives()
 
+        # Draw score and level
+        self._draw_score_and_level()
+
         # If an end message is set, render an overlay so it's clearly visible
         if self.end_message:
             # semi-transparent overlay
@@ -334,6 +574,8 @@ class AlienInvasion:
     def run_game(self):
         while True:
             self._check_events()
+            # Play background music while game is active
+            self._play_background_music()
             if self.game_active:
                 # update background first (pass dt)
                 dt = self.clock.get_time() / 1000.0
@@ -357,33 +599,41 @@ class AlienInvasion:
                     if bullet.rect.bottom <= 0:
                         self.bullets.remove(bullet)
 
-                pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+                # Handle bullet collisions with aliens and award points
+                hit_aliens = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+                for _ in hit_aliens:
+                    self.score += 10
+                    self.aliens_killed_this_level += 1
 
                 # Update and handle laser beams (pass dt for consistency)
                 self.beams.update(dt)
-                # beams destroy aliens they hit
+                # beams destroy aliens they hit and award points
                 if self.beams:
-                    pygame.sprite.groupcollide(self.beams, self.aliens, False, True)
+                    hit_by_beam = pygame.sprite.groupcollide(self.beams, self.aliens, False, True)
+                    for _ in hit_by_beam:
+                        self.score += 10
+                        self.aliens_killed_this_level += 1
 
                 # Spawn pickups occasionally (if none active)
                 now = pygame.time.get_ticks()
 
-                # If the first life was lost and we scheduled a pickup, spawn it when scheduled
-                if (not self.pickup_spawned_after_first_life) and self.pickup_scheduled_at:
+                # Spawn pickups when scheduled (either on level-up or first life lost)
+                if self.pickup_scheduled_at and not self.pickup:
                     if now >= self.pickup_scheduled_at:
-                            # spawn closer to the ship (lower on screen) under aliens if possible
-                            try:
-                                spawn_x = random.randrange(80, self.settings.screen_width - 80)
-                                if len(self.aliens) > 0:
-                                    max_bottom = max(a.rect.bottom for a in self.aliens)
-                                    # place a bit lower than the alien formation but above the ship
-                                    spawn_y = min(max_bottom + 60, self.settings.screen_height - 140)
-                                else:
-                                    spawn_y = self.settings.screen_height - 200
-                                self.pickup = LaserPickup(self, spawn_x, spawn_y)
-                            except Exception:
-                                self.pickup = None
-                            self.pickup_spawned_after_first_life = True
+                        # spawn under aliens if possible
+                        try:
+                            spawn_x = random.randrange(80, self.settings.screen_width - 80)
+                            if len(self.aliens) > 0:
+                                max_bottom = max(a.rect.bottom for a in self.aliens)
+                                # place a bit lower than the alien formation but above the ship
+                                spawn_y = min(max_bottom + 60, self.settings.screen_height - 140)
+                            else:
+                                spawn_y = self.settings.screen_height - 200
+                            self.pickup = LaserPickup(self, spawn_x, spawn_y)
+                        except Exception:
+                            self.pickup = None
+                        self.pickup_scheduled_at = None  # clear scheduling after spawn
+                        self.pickup_spawned_after_first_life = True
 
                 # Check pickup collection
                 if self.pickup and self.pickup.rect.colliderect(self.ship.rect):
@@ -406,22 +656,37 @@ class AlienInvasion:
                         self._aliens_reach_bottom()
                         break
 
-                # Win condition: all aliens destroyed
+                # Win condition: all aliens destroyed -> next level
                 if not self.aliens:
-                    self.game_active = False
-                    self.end_message = 'YOU WIN! Press R to restart or Q to quit'
-                    self.end_message_shown_at = pygame.time.get_ticks()
-                    # spawn win effects
-                    self._spawn_win_effects()
-                    # show immediately
-                    self._show_message(self.end_message)
+                    if self.lives > 0:
+                        # proceed to next level
+                        self._level_up()
+                    else:
+                        # game over after last life lost
+                        self.game_active = False
+                        self.end_message = f'GAME OVER - Final Score: {self.score}'
+                        self.end_message_shown_at = pygame.time.get_ticks()
+                        self._show_message(self.end_message)
+                        # prompt for initials and save if qualified
+                        if self.high_scores.is_high_score(self.score):
+                            initials = self._get_player_initials()
+                            self.high_scores.add_score(initials, self.score)
+                            self._show_leaderboard_with_player(initials, self.score)
+                            self.end_message = f'Score saved! {initials} - {self.score}'
+
 
             else:
                 # Game inactive: show appropriate message if lives exhausted
                 if self.lives <= 0 and not self.end_message:
-                    self.end_message = 'GAME OVER - Press R to restart or Q to quit'
+                    self.end_message = f'GAME OVER - Final Score: {self.score}'
                     self.end_message_shown_at = pygame.time.get_ticks()
                     self._show_message(self.end_message)
+                    # prompt for initials and save if qualified
+                    if self.high_scores.is_high_score(self.score):
+                        initials = self._get_player_initials()
+                        self.high_scores.add_score(initials, self.score)
+                        self._show_leaderboard_with_player(initials, self.score)
+
                 # If an end_message exists and this was a WIN, update celebration effects
                 if self.end_message and 'YOU WIN' in (self.end_message or ''):
                     dt = self.clock.get_time() / 1000.0
@@ -485,6 +750,7 @@ class AlienInvasion:
         else:
             # No lives left -> game over
             self.game_active = False
+            self._stop_background_music()
             self.end_message = 'GAME OVER - Press R to restart or Q to quit'
             self.end_message_shown_at = pygame.time.get_ticks()
             self._show_message(self.end_message)
@@ -503,10 +769,14 @@ class AlienInvasion:
 
         # Reset game state
         self.lives = self.settings.ship_limit
+        self.score = 0
+        self.level = 1
+        self.aliens_killed_this_level = 0
         self.bullets.empty()
         self.aliens.empty()
         self.beams.empty()
         self.pickup = None
+        self.laser_enabled = False
         self.first_life_lost_at = None
         self.pickup_scheduled_at = None
         self.pickup_spawned_after_first_life = False
@@ -519,6 +789,8 @@ class AlienInvasion:
         self.end_message = None
         self.end_message_shown_at = None
         self.game_active = True
+        # Restart music
+        self._play_background_music()
 
     def _draw_lives(self):
         """Draw small ship icons for remaining lives in the HUD area."""
@@ -527,6 +799,15 @@ class AlienInvasion:
         y = 10
         for i in range(max(0, self.lives)):
             self.screen.blit(self.hud_ship_image, (x + i * (self.hud_ship_image.get_width() + pad), y))
+
+    def _draw_score_and_level(self):
+        """Draw current score and level in the top-right HUD."""
+        score_text = self.hud_font.render(f"Score: {self.score}", True, self.settings.text_color)
+        level_text = self.hud_font.render(f"Level: {self.level}", True, self.settings.text_color)
+        score_rect = score_text.get_rect(topright=(self.settings.screen_width - 10, 10))
+        level_rect = level_text.get_rect(topright=(self.settings.screen_width - 10, score_rect.bottom + 5))
+        self.screen.blit(score_text, score_rect)
+        self.screen.blit(level_text, level_rect)
 
     def _aliens_reach_bottom(self):
         """Handle the case where aliens reach the bottom: explosion, lose a life, reset or game over."""
@@ -563,8 +844,43 @@ class AlienInvasion:
             self.end_message = 'GAME OVER - Press R to restart or Q to quit'
             self.end_message_shown_at = pygame.time.get_ticks()
             self._show_message(self.end_message)
-
+def _draw_score_and_level(self):
+        """Draw current score and level in the top-right HUD."""
+        score_text = self.hud_font.render(f"Score: {self.score}", True, self.settings.text_color)
+        level_text = self.hud_font.render(f"Level: {self.level}", True, self.settings.text_color)
+        score_rect = score_text.get_rect(topright=(self.settings.screen_width - 10, 10))
+        level_rect = level_text.get_rect(topright=(self.settings.screen_width - 10, score_rect.bottom + 5))
+        self.screen.blit(score_text, score_rect)
+        self.screen.blit(level_text, level_rect)
 
 if __name__ == '__main__':
     ai = AlienInvasion()
     ai.run_game()
+    # use scanit to fix the code
+    onCommand = "scanit python_work/Alien_Game_and_its_other_folders/alien.py --fix"
+    import os
+    os.system(onCommand)
+    def _aliens_reach_bottom(self):
+        """Handle the case where aliens reach the bottom: explosion, lose a life, reset or game over."""
+        # Draw explosions at each alien's position for visual effect
+        try:
+            for alien in list(self.aliens):
+                expl_surf = pygame.Surface((alien.rect.width * 2, alien.rect.height * 2), pygame.SRCALPHA)
+                pygame.draw.circle(expl_surf, (255, 80, 0, 220), (expl_surf.get_width() // 2, expl_surf.get_height() // 2), max(alien.rect.width, alien.rect.height))
+                expl_rect = expl_surf.get_rect(center=alien.rect.center)
+                self.screen.blit(expl_surf, expl_rect)
+            pygame.display.flip()
+            pygame.time.delay(600)
+        except Exception:
+            pass
+
+        # decrement lives
+        self.lives -= 1
+
+        # clear bullets and aliens
+        self.bullets.empty()
+        self.aliens.empty()
+        self.beams.empty()
+        self.pickup = None
+
+             
