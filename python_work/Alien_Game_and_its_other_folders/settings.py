@@ -6,11 +6,10 @@ class Settings:
         self.screen_width = 1200
         self.screen_height = 800
         self.bg_color = (10, 15, 40)
-
-        # Ship
+        
         self.ship_speed = 5
 
-        # Bullet
+
         self.bullet_speed = 700  # pixels per second for dt-based movement
         self.bullet_width = 3
         self.bullet_height = 15
@@ -45,7 +44,10 @@ class Settings:
         self.laser_duration = 8000  # ms laser ability lasts after pickup
         self.laser_beam_duration = 600  # ms a fired beam lasts
         self.laser_cooldown = 500  # ms between laser fires
-
-        # Music
+        # run game
         self.music_path = 'images/background_music.wav'
-        self.music_volume = 1.0  # 100% volume (0.0 to 1.0) - MAXIMUM
+        self.music_volume = 0.5  # 0.0 to 1.
+        
+  
+
+

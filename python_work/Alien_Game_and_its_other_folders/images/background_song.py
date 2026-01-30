@@ -69,4 +69,4 @@ class Planet(pygame.sprite.Sprite):
             self.y = -self.rect.height
             self.rect.x = random.randrange(0, self.settings.screen_width - self.rect.width)
         self.rect.y = int(self.y)
-        
+       

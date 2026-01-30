@@ -32,9 +32,5 @@ class Bullet(pygame.sprite.Sprite):
     def update(self, dt=0.0):
         # Move by dx/dy (pixels per second scaled by dt seconds)
         self.x += self.dx * dt
-        self.y += self.dy * dt
-        self.rect.x = int(self.x)
-        self.rect.y = int(self.y)
-
-    def draw_bullet(self):
-        pygame.draw.rect(self.screen, self.color, self.rect)
+    
+        
