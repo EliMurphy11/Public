@@ -18,7 +18,7 @@ class AlienInvasion:
         pygame.init()
         self.clock = pygame.time.Clock()
 
-        self.settings = Settings
+        self.settings = Settings()
         pygame.display.set_caption("Alien Invasion")
 
         self.ship = Ship
